@@ -193,5 +193,24 @@ def create_fit_card(outfit: str, new_item: dict) -> str:
 
     Before writing code, fill in the Tool 3 section of planning.md.
     """
-    # Replace this with your implementation
-    return ""
+    # Step 1, clean the string
+    clean = outfit.lower().strip()
+    if not outfit or not outfit.strip():
+        return "Could not generate a caption — no outfit suggestion was provided."
+    else:
+        prompt = f"""Write a 2-4 sentence Instagram/TikTok caption for this thrifted outfit.
+        Item: {new_item['title']} — ${new_item['price']} on {new_item['platform']}
+        Outfit: {outfit}
+
+        Guidelines:
+        - Casual and authentic, like a real OOTD post
+        - Mention the item name, price, and platform naturally (once each)
+        - Capture the specific vibe of the outfit
+        - No generic filler — make it sound real"""
+
+    response = client.chat.completions.create(
+    model="llama3-8b-8192",
+    messages=[{"role": "user", "content": prompt}],
+    temperature=1.2
+    )
+    return response.choices[0].message.content
