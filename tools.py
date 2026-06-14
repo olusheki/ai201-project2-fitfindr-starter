@@ -133,10 +133,35 @@ def suggest_outfit(new_item: dict, wardrobe: dict) -> str:
     # step 1
     items = wardrobe["items"]
     if not items:
-        pass
+        prompt = f"""I just found this thrifted item:
+        - Name: {new_item['title']}
+        - Style: {', '.join(new_item['style_tags'])}
+        - Colors: {', '.join(new_item['colors'])}
+        - Category: {new_item['category']}
+
+        Give me general styling advice — what kinds of pieces pair well with this, what vibe it suits, etc."""
+
     else:
-        pass
-    return ""
+        wardrobe_lines = "\n".join(
+        f"- {item['name']} ({item['category']}, {', '.join(item['colors'])})"
+        for item in items
+        )
+        prompt = f"""I'm considering buying this thrifted item:
+        - Name: {new_item['title']}
+        - Style: {', '.join(new_item['style_tags'])}
+        - Colors: {', '.join(new_item['colors'])}
+
+        My current wardrobe:
+        {wardrobe_lines}
+
+        Suggest 1-2 complete outfits using the new item and specific pieces from my wardrobe."""
+
+    # Step 4
+    response = client.chat.completions.create(
+    model="llama3-8b-8192",
+    messages=[{"role": "user", "content": prompt}]
+    )
+    return response.choices[0].message.content
 
 
 # ── Tool 3: create_fit_card ───────────────────────────────────────────────────
