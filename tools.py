@@ -69,8 +69,37 @@ def search_listings(
 
     Before writing code, fill in the Tool 1 section of planning.md.
     """
-    # Replace this with your implementation
-    return []
+
+    # Step 1: load the database, now clo_db has a list of dicts
+    clo_db = load_listings()
+    # Step 2: filter by price / size if provided
+
+    # Filter first, no mutation
+    filtered = [
+        item for item in clo_db
+        if (max_price is None or item["price"] <= max_price)
+        and (size is None or size.lower() in item["size"].lower())
+    ]
+    # Step 3: Score the remaining listing by keyword overlap with description
+
+    #I'll start by splitting description into keyword
+    keywords = description.lower().split(" ")
+    # I think I'll take the info from description and style_tags
+    scored = [] #I want the key to be the id, and the score the vals
+    for item in filtered:
+        clean_desc = item['description'].lower().split(" ")
+        clean_desc += item['style_tags'] + item["title"] + item["category"]
+        score = 0
+        for word in keywords:
+            if word in clean_desc:
+                score += 1
+        # Step 4, drop those with a score of 0
+        if score > 0:
+            scored.append([score, item])
+
+    # Step 5: sort by score with highest first
+    scored.sort(key=lambda x: x[0], reverse=True)
+    return [item for _, item in scored]
 
 
 # ── Tool 2: suggest_outfit ────────────────────────────────────────────────────
@@ -101,6 +130,12 @@ def suggest_outfit(new_item: dict, wardrobe: dict) -> str:
     Before writing code, fill in the Tool 2 section of planning.md.
     """
     # Replace this with your implementation
+    # step 1
+    items = wardrobe["items"]
+    if not items:
+        pass
+    else:
+        pass
     return ""
 
 
