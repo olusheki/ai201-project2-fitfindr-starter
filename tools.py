@@ -87,8 +87,8 @@ def search_listings(
     # I think I'll take the info from description and style_tags
     scored = [] #I want the key to be the id, and the score the vals
     for item in filtered:
-        clean_desc = item['description'].lower().split(" ")
-        clean_desc += item['style_tags'] + item["title"] + item["category"]
+        clean_desc = item['description'].lower().split()
+        clean_desc += item['style_tags'] + item["title"].lower().split() + item["category"].lower().split()
         score = 0
         for word in keywords:
             if word in clean_desc:
@@ -129,8 +129,7 @@ def suggest_outfit(new_item: dict, wardrobe: dict) -> str:
 
     Before writing code, fill in the Tool 2 section of planning.md.
     """
-    # Replace this with your implementation
-    # step 1
+    client = _get_groq_client()
     items = wardrobe["items"]
     if not items:
         prompt = f"""I just found this thrifted item:
@@ -158,7 +157,7 @@ def suggest_outfit(new_item: dict, wardrobe: dict) -> str:
 
     # Step 4
     response = client.chat.completions.create(
-    model="llama3-8b-8192",
+    model="llama-3.3-70b-versatile",
     messages=[{"role": "user", "content": prompt}]
     )
     return response.choices[0].message.content
@@ -193,10 +192,9 @@ def create_fit_card(outfit: str, new_item: dict) -> str:
 
     Before writing code, fill in the Tool 3 section of planning.md.
     """
-    # Step 1, clean the string
-    clean = outfit.lower().strip()
+    client = _get_groq_client()
     if not outfit or not outfit.strip():
-        return "Could not generate a caption — no outfit suggestion was provided."
+        return "Could not generate a caption, no outfit suggestion was provided."
     else:
         prompt = f"""Write a 2-4 sentence Instagram/TikTok caption for this thrifted outfit.
         Item: {new_item['title']} — ${new_item['price']} on {new_item['platform']}
@@ -209,7 +207,7 @@ def create_fit_card(outfit: str, new_item: dict) -> str:
         - No generic filler — make it sound real"""
 
     response = client.chat.completions.create(
-    model="llama3-8b-8192",
+    model="llama-3.3-70b-versatile",
     messages=[{"role": "user", "content": prompt}],
     temperature=1.2
     )

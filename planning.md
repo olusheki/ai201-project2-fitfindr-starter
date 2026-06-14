@@ -110,9 +110,9 @@ For each tool, describe the specific failure mode you're handling and what the a
 
 | Tool | Failure mode | Agent response |
 |------|-------------|----------------|
-| search_listings | No results match the query | |
-| suggest_outfit | Wardrobe is empty | |
-| create_fit_card | Outfit input is missing or incomplete | |
+| search_listings | No results match the query | Returns an empty list|
+| suggest_outfit | Wardrobe is empty | returns a string with general styling advice for the item, not the whole wardrobe |
+| create_fit_card | Outfit input is missing or incomplete | Says "Could not generate a caption, no outfit suggestion was provided." |
 
 ---
 
@@ -163,6 +163,29 @@ flowchart TD
      before trusting it" is a plan. -->
 
 **Milestone 3 — Individual tool implementations:**
+
+For the tool implementation, I'm using Claude Code to help me with planning to avoid errors in the future, to check my work, give me example code snippets, and to break down steps into smaller actionable goals.
+
+Examples of a prompt: 
+
+I said: "I'm making the search_listings tool in @tools.py , and I'm wondering how to safely remove the items from the database during iteration."
+
+It responded: "You don't need to remove items during iteration — that's where bugs creep in. Instead, build a new filtered list using a list comprehension, then score what's left:
+
+```python
+listings = load_listings()
+
+# Filter first, no mutation
+filtered = [
+    item for item in listings
+    if (max_price is None or item["price"] <= max_price)
+    and (size is None or size.lower() in item["size"].lower())
+]
+```
+
+Then score and sort the filtered list separately. You never touch the original listings — you just select from it. This is safer than removing during iteration (which can skip items or cause index errors) and cleaner than copying then deleting."
+
+I looked at exactly what that code snipped was doing, understood it, and checked if the output was actually correct.
 
 **Milestone 4 — Planning loop and state management:**
 
