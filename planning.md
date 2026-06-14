@@ -205,7 +205,7 @@ a relevant item, then we can move onto step 2 by taking the most relevant item. 
 Using the most relevant item paired with the user's wardrobe, it'll craft an outfit and move onto step 3. If the user's wardrobe is empty, then it will give general styling advice for the specific item, but not a whole outfit.
 
 **Step 3:**
-If it's able to make a whole outfit, it'll draft a social media caption to go along with the outfit for if the user wants to post it.
+If it's able to make a whole outfit, it'll draft a social media caption to go along with the outfit for if the user wants to post it. If a whole outfit wasn't available, then it'll just make a caption for the specific item.
 
 **Final output to user:**
 "I found this shirt just for you from [brand] and it costs [price]! I've put together a potential outfit to go with it: [item1], [item2], etc. And if you'd like to share, here's a caption I drafted: '[insert caption]'."
