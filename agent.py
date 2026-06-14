@@ -18,8 +18,8 @@ Usage (once implemented):
     print(result["error"])   # None on success
 """
 
-from tools import search_listings, suggest_outfit, create_fit_card
-
+from tools import search_listings, suggest_outfit, create_fit_card, _get_groq_client
+import json
 
 # ── session state ─────────────────────────────────────────────────────────────
 
@@ -93,8 +93,55 @@ def run_agent(query: str, wardrobe: dict) -> dict:
     of planning.md — your implementation should match what you described there.
     """
     # TODO: implement the planning loop
+
+    # Step 1: initalize a new session
     session = _new_session(query, wardrobe)
-    session["error"] = "Planning loop not yet implemented."
+
+    #Step 2, parse the query to find a description of what item they're looking for
+    # possible paths: ask an LLM, or extract key words. I'll probably ask an LLM.
+    client = _get_groq_client()
+    prompt = f"""Extract search parameters from this clothing query. Respond with ONLY a JSON object, no explanation.
+
+    Query: "{query}"
+
+    Return this exact format:
+    {{
+    "description": "short phrase describing the clothing item and style (e.g. 'vintage graphic tee')",
+    "size": "size string if mentioned (e.g. 'M', 'S/M', 'XL'), or null if not mentioned",
+    "max_price": numeric price ceiling if mentioned (e.g. 30.0), or null if not mentioned
+    }}"""
+    response = client.chat.completions.create(
+        model="llama-3.3-70b-versatile",
+        messages=[{"role": "user", "content": prompt}],
+        temperature=0,
+    )
+
+    try:
+        parsed = json.loads(response.choices[0].message.content)
+    except json.JSONDecodeError:
+        session["error"] = "Failed to parse your query. Please try rephrasing it."
+        return session
+
+    session["parsed"] = parsed
+
+    # Step 3
+    relevant_clothes = search_listings(parsed["description"],parsed["size"], parsed["max_price"])
+    if relevant_clothes:
+        session["search_results"] = relevant_clothes
+    else:
+        session["error"] = "Sorry, I couldn't find any items that matched your description. Please try again or ask for something else."
+        return session
+
+    # Step 4
+    top_item = relevant_clothes[0]
+    session["selected_item"] = top_item
+
+    # Step 5
+    session["outfit_suggestion"] = suggest_outfit(top_item, session["wardrobe"])
+
+    # Step 6
+    session["fit_card"] = create_fit_card(session["outfit_suggestion"], top_item)
+
     return session
 
 
