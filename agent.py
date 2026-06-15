@@ -42,6 +42,7 @@ def _new_session(query: str, wardrobe: dict) -> dict:
         "outfit_suggestion": None,   # string returned by suggest_outfit
         "fit_card": None,            # string returned by create_fit_card
         "error": None,               # set if the interaction ended early
+        "retry_note": None,          # set if search was retried with loosened constraints
     }
 
 
@@ -125,12 +126,27 @@ def run_agent(query: str, wardrobe: dict) -> dict:
     session["parsed"] = parsed
 
     # Step 3
-    relevant_clothes = search_listings(parsed["description"],parsed["size"], parsed["max_price"])
-    if relevant_clothes:
-        session["search_results"] = relevant_clothes
-    else:
+    relevant_clothes = search_listings(parsed["description"], parsed["size"], parsed["max_price"])
+    if not relevant_clothes and (parsed.get("size") or parsed.get("max_price")):
+        # Retry with loosened constraints — drop size and price ceiling
+        relevant_clothes = search_listings(parsed["description"], None, None)
+        if relevant_clothes:
+            session["retry_note"] = (
+                "No exact matches found with your size/price constraints. "
+                "I loosened the search and found these instead."
+            )
+        else:
+            session["error"] = (
+                "Sorry, I couldn't find any items that matched your description "
+                "even after loosening size and price constraints. "
+                "Please try a different description."
+            )
+            return session
+    elif not relevant_clothes:
         session["error"] = "Sorry, I couldn't find any items that matched your description. Please try again or ask for something else."
         return session
+
+    session["search_results"] = relevant_clothes
 
     # Step 4
     top_item = relevant_clothes[0]

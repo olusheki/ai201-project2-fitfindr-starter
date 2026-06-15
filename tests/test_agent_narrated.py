@@ -74,9 +74,18 @@ Return this exact format:
     print(f"STEP 3 — Calling search_listings(description=\"{parsed['description']}\", size={parsed['size']}, max_price={parsed['max_price']})")
     results = search_listings(parsed["description"], parsed["size"], parsed["max_price"])
 
-    if not results:
+    if not results and (parsed.get("size") or parsed.get("max_price")):
+        print("No results with original constraints. Retrying with description only (dropping size and max_price)...")
+        results = search_listings(parsed["description"], None, None)
+        if results:
+            print(f"Retry succeeded! Telling user: 'No exact matches found with your size/price constraints. I loosened the search and found these instead.'")
+        else:
+            print("Retry also returned no results. Stopping early.")
+            print("Error returned to user: Sorry, I couldn't find any items that matched your description even after loosening size and price constraints.")
+            return
+    elif not results:
         print("No results found. Stopping early.")
-        print(f"Error returned to user: Sorry, I couldn't find any items that matched your description.")
+        print("Error returned to user: Sorry, I couldn't find any items that matched your description.")
         return
 
     scored = score_items(parsed["description"], results)
@@ -133,5 +142,11 @@ if __name__ == "__main__":
     run_narrated(
         query="designer ballgown size XXS under $5",
         wardrobe=wardrobe,
-        label="Error path — no results expected",
+        label="Error path — no results expected (total failure)",
+    )
+
+    run_narrated(
+        query="looking for a graphic tee size XXS under $5",
+        wardrobe=wardrobe,
+        label="Retry path — tight constraints loosened automatically",
     )
